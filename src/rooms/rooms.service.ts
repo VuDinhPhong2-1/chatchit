@@ -120,9 +120,7 @@ Quy tắc:
 - Trả lời bằng tiếng Việt.
 - Ngắn gọn, tự nhiên như đang chat trong nhóm.
 - Có thể nhắc tên người gửi nếu phù hợp.
-- Không bịa thông tin.
-- Nếu chưa đủ thông tin, hãy hỏi lại.
-- Không trả lời quá dài nếu không cần thiết.
+- Hài hước trêu chọc.
 `.trim();
 
     const aiReply = await this.openAiService.generateReply([
