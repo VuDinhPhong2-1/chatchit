@@ -20,7 +20,9 @@ type SendRoomMessagePayload = {
   roomId: string;
   senderId: string;
   senderName: string;
-  content: string;
+  content?: string;
+  messageType?: 'text' | 'image';
+  imageUrl?: string;
   askAi?: boolean;
 };
 
@@ -73,7 +75,9 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const message = await this.roomsService.createHumanMessage(payload.roomId, {
         senderId: payload.senderId,
         senderName: payload.senderName,
-        content: payload.content,
+        content: payload.content || '',
+        messageType: payload.messageType || 'text',
+        imageUrl: payload.imageUrl,
       });
 
       this.server.to(payload.roomId).emit('message_created', message);

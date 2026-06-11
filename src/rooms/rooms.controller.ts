@@ -1,6 +1,24 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { IsArray, IsBoolean, IsIn, IsMongoId, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { RoomsService } from './rooms.service';
+import { CloudinaryService } from './cloudinary.service';
 
 class CreateRoomDto {
   @IsString()
@@ -22,7 +40,12 @@ class CreateRoomDto {
     role: 'human' | 'ai';
   }[];
 }
-
+type UploadedImageFile = {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+  size: number;
+};
 class SendRoomMessageDto {
   @IsString()
   senderId!: string;
@@ -30,9 +53,17 @@ class SendRoomMessageDto {
   @IsString()
   senderName!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(1)
-  content!: string;
+  content?: string;
+
+  @IsOptional()
+  @IsIn(['text', 'image'])
+  messageType?: 'text' | 'image';
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
 
   @IsOptional()
   @IsBoolean()
@@ -41,11 +72,39 @@ class SendRoomMessageDto {
 
 @Controller('rooms')
 export class RoomsController {
-  constructor(private readonly roomsService: RoomsService) {}
+  constructor(
+    private readonly roomsService: RoomsService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
 
   @Post()
   createRoom(@Body() body: CreateRoomDto) {
     return this.roomsService.createRoom(body);
+  }
+
+  @Post('upload-image')
+  @UseInterceptors(
+    FileInterceptor('image', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.startsWith('image/')) {
+          callback(new Error('Only image files are allowed'), false);
+          return;
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
+  async uploadImage(@UploadedFile() file: UploadedImageFile) {
+    const result = await this.cloudinaryService.uploadImage(file);
+
+    return {
+      imageUrl: result.url,
+      publicId: result.publicId,
+    };
   }
 
   @Get(':roomId/messages')
@@ -58,6 +117,9 @@ export class RoomsController {
     @Param('roomId') roomId: string,
     @Body() body: SendRoomMessageDto,
   ) {
-    return this.roomsService.sendMessage(roomId, body);
+    return this.roomsService.sendMessage(roomId, {
+      ...body,
+      content: body.content || '',
+    });
   }
 }

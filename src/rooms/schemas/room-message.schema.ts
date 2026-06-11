@@ -17,8 +17,14 @@ export class RoomMessage {
   @Prop({ required: true })
   senderName!: string;
 
-  @Prop({ required: true })
-  content!: string;
+  @Prop({ enum: ['text', 'image'], default: 'text' })
+  messageType!: 'text' | 'image';
+
+  @Prop()
+  content?: string;
+
+  @Prop()
+  imageUrl?: string;
 }
 
 export const RoomMessageSchema = SchemaFactory.createForClass(RoomMessage);

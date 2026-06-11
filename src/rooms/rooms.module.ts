@@ -6,6 +6,7 @@ import { Room, RoomSchema } from './schemas/room.schema';
 import { RoomMessage, RoomMessageSchema } from './schemas/room-message.schema';
 import { OpenAiModule } from '../open-ai/open-ai.module';
 import { RoomsGateway } from './rooms.gateway';
+import { CloudinaryService } from './cloudinary.service';
 @Module({
   imports: [
     OpenAiModule,
@@ -15,6 +16,6 @@ import { RoomsGateway } from './rooms.gateway';
     ]),
   ],
   controllers: [RoomsController],
-  providers: [RoomsService, RoomsGateway],
+  providers: [RoomsService, RoomsGateway, CloudinaryService],
 })
 export class RoomsModule { }

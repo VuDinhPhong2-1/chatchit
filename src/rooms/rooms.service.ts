@@ -21,7 +21,9 @@ export class RoomsService {
     input: {
       senderId: string;
       senderName: string;
-      content: string;
+      content?: string;
+      messageType?: 'text' | 'image';
+      imageUrl?: string;
     },
   ) {
     const room = await this.roomModel.findById(roomId).lean();
@@ -35,7 +37,9 @@ export class RoomsService {
       senderType: 'human',
       senderId: input.senderId,
       senderName: input.senderName,
-      content: input.content,
+      content: input.content || '',
+      messageType: input.messageType || 'text',
+      imageUrl: input.imageUrl,
     });
 
     return message.toObject();
