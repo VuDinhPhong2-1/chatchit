@@ -82,11 +82,11 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         `${payload.senderName} sent message to room ${payload.roomId}`,
       );
     } catch (error) {
+      this.logger.error(error);
+
       client.emit('room_error', {
         message: 'Không gửi được tin nhắn',
       });
-
-      this.logger.error(error);
     }
   }
 }
