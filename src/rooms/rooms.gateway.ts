@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-
+import { RoomsService } from './rooms.service';
 type JoinRoomPayload = {
   roomId: string;
   senderId: string;
@@ -31,7 +31,7 @@ type SendRoomMessagePayload = {
 })
 export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(RoomsGateway.name);
-
+  constructor(private readonly roomsService: RoomsService) { }
   @WebSocketServer()
   server!: Server;
 
@@ -65,24 +65,28 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('send_room_message')
-  handleSendRoomMessage(
+  async handleSendRoomMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: SendRoomMessagePayload,
   ) {
-    const message = {
-      _id: `temp-${Date.now()}`,
-      roomId: payload.roomId,
-      senderType: 'human' as const,
-      senderId: payload.senderId,
-      senderName: payload.senderName,
-      content: payload.content,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const message = await this.roomsService.createHumanMessage(payload.roomId, {
+        senderId: payload.senderId,
+        senderName: payload.senderName,
+        content: payload.content,
+      });
 
-    this.server.to(payload.roomId).emit('message_created', message);
+      this.server.to(payload.roomId).emit('message_created', message);
 
-    this.logger.log(
-      `${payload.senderName} sent message to room ${payload.roomId}`,
-    );
+      this.logger.log(
+        `${payload.senderName} sent message to room ${payload.roomId}`,
+      );
+    } catch (error) {
+      client.emit('room_error', {
+        message: 'Không gửi được tin nhắn',
+      });
+
+      this.logger.error(error);
+    }
   }
 }

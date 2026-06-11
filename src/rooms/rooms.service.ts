@@ -15,8 +15,31 @@ export class RoomsService {
     private readonly roomMessageModel: Model<RoomMessage>,
 
     private readonly openAiService: OpenAiService,
-  ) {}
+  ) { }
+  async createHumanMessage(
+    roomId: string,
+    input: {
+      senderId: string;
+      senderName: string;
+      content: string;
+    },
+  ) {
+    const room = await this.roomModel.findById(roomId).lean();
 
+    if (!room) {
+      throw new NotFoundException('Room not found');
+    }
+
+    const message = await this.roomMessageModel.create({
+      roomId: new Types.ObjectId(roomId),
+      senderType: 'human',
+      senderId: input.senderId,
+      senderName: input.senderName,
+      content: input.content,
+    });
+
+    return message.toObject();
+  }
   async createRoom(input: {
     name: string;
     type?: 'private' | 'group';
@@ -36,13 +59,13 @@ export class RoomsService {
       participants: hasAi
         ? input.participants
         : [
-            ...input.participants,
-            {
-              userId: 'ai-assistant',
-              displayName: 'AI Assistant',
-              role: 'ai',
-            },
-          ],
+          ...input.participants,
+          {
+            userId: 'ai-assistant',
+            displayName: 'AI Assistant',
+            role: 'ai',
+          },
+        ],
     });
 
     return room;
